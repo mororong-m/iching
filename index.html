@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>오늘의 괘</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --bg:#0A0A0A;
+    --fg:#FFFFFF;
+    --muted:#9A9A9A;
+    --line:#2A2A2A;
+    --accent:#F5A03C;
+    --card:#111111;
+    --radius:8px;
+    --btn-radius:6px;
+    --gap:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--fg);
+    font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',system-ui,-apple-system,sans-serif;
+    min-height:100dvh;
+    display:flex;
+    justify-content:center;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    width:100%;
+    max-width:480px;
+    padding:28px 20px calc(32px + env(safe-area-inset-bottom));
+    display:flex;
+    flex-direction:column;
+    min-height:100dvh;
+  }
+  header{text-align:center;margin-bottom:24px;}
+  header h1{
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:-0.02em;
+    margin:0 0 6px;
+  }
+  header p{
+    margin:0;
+    font-size:14px;
+    color:var(--muted);
+  }
+  .accent{color:var(--accent);}
+
+  .stage{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:var(--gap);
+  }
+
+  /* 초기 안내 */
+  .intro{
+    text-align:center;
+    color:var(--muted);
+    font-size:15px;
+    padding:24px 8px;
+  }
+  .intro .mark{font-size:40px;color:var(--accent);line-height:1;margin-bottom:12px;}
+
+  /* 결과 카드 */
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px 20px;
+    opacity:0;
+    transform:translateY(6px);
+    transition:opacity .35s ease, transform .35s ease;
+  }
+  .card.show{opacity:1;transform:none;}
+
+  .hexno{
+    font-size:13px;
+    color:var(--accent);
+    font-weight:700;
+    letter-spacing:.04em;
+    margin-bottom:4px;
+  }
+  .hexname{
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    margin:0;
+  }
+  .hexhanja{
+    font-size:15px;
+    color:var(--muted);
+    margin-top:2px;
+  }
+
+  /* 괘상 */
+  .gua{
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+    align-items:center;
+    margin:20px auto 14px;
+    width:168px;
+  }
+  .linerow{position:relative;width:100%;display:flex;justify-content:center;}
+  .yao{display:flex;gap:12px;height:12px;width:128px;}
+  .yao .bar{background:var(--fg);border-radius:2px;height:100%;}
+  .yao.yang .bar{width:100%;}
+  .yao.yin .bar{width:calc(50% - 6px);}
+  .linerow.chg .yao .bar{background:var(--accent);}
+  .chgmark{position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:13px;line-height:1;color:var(--accent);font-weight:800;}
+  .marklegend{text-align:center;font-size:11px;color:var(--muted);margin:0 0 4px;}
+
+  /* 지괘 */
+  .toGua{margin-top:22px;padding-top:18px;border-top:1px dashed var(--line);}
+  .toGua .tolabel{text-align:center;font-size:12px;color:var(--accent);letter-spacing:.06em;font-weight:700;margin-bottom:12px;}
+  .toGua .hexname{font-size:22px;font-weight:800;margin:0;}
+  .nochg{margin-top:16px;text-align:center;font-size:13px;color:var(--muted);}
+
+  /* 상하괘 */
+  .trigrams{
+    display:flex;
+    gap:10px;
+    margin-top:4px;
+  }
+  .tri{
+    flex:1;
+    background:#0d0d0d;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:12px;
+    text-align:center;
+  }
+  .tri .role{font-size:11px;color:var(--muted);letter-spacing:.06em;}
+  .tri .sym{font-size:26px;color:var(--accent);line-height:1.1;margin:4px 0 2px;}
+  .tri .tname{font-size:14px;font-weight:700;}
+  .tri .tnat{font-size:12px;color:var(--muted);}
+
+  /* 풀이 */
+  .reading{margin-top:18px;}
+  .reading h3{
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:.08em;
+    margin:0 0 6px;
+    font-weight:700;
+    text-transform:uppercase;
+  }
+  .reading .gua-txt{font-size:15px;margin:0 0 14px;}
+  .reading .adv-txt{
+    font-size:15px;
+    margin:0;
+    padding-left:12px;
+    border-left:2px solid var(--accent);
+    color:#e9e9e9;
+  }
+
+  /* 버튼 */
+  .actions{margin-top:26px;}
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    border:none;
+    width:100%;
+    font-weight:800;
+    letter-spacing:.02em;
+  }
+  .draw-btn{
+    background:var(--accent);
+    color:#160a00;
+    font-size:18px;
+    padding:16px;
+    border-radius:var(--btn-radius);
+    transition:filter .15s ease, transform .05s ease;
+  }
+  .draw-btn:hover{filter:brightness(1.07);}
+  .draw-btn:active{transform:scale(.99);}
+  .again-btn{
+    background:transparent;
+    color:var(--accent);
+    border:1px solid var(--line);
+    font-size:15px;
+    font-weight:700;
+    padding:14px;
+    border-radius:var(--btn-radius);
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .again-btn:hover{border-color:var(--accent);}
+  .btnrow{display:flex;gap:10px;}
+  .btnrow button{flex:1;}
+  button:disabled{opacity:.7;cursor:default;}
+
+  footer{
+    text-align:center;
+    margin-top:22px;
+    font-size:12px;
+    color:#5a5a5a;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>오늘의 <span class="accent">괘</span></h1>
+      <p>버튼을 눌러 지금의 괘를 뽑아보세요</p>
+    </header>
+
+    <main class="stage" id="stage">
+      <div class="intro" id="intro">
+        <div class="mark">☯</div>
+        마음을 가다듬고<br />아래 버튼을 눌러보세요
+      </div>
+    </main>
+
+    <div class="actions" id="actions">
+      <button class="draw-btn" id="drawBtn">괘 뽑기</button>
+    </div>
+
+    <footer>동전 세 닢을 여섯 번 던져 뽑고, 변효가 있으면 지괘까지 보여줍니다</footer>
+  </div>
+
+<script>
+/* ---- 팔괘 (아래→위 순서, 1=양 0=음) ---- */
+const TRI = {
+  geon:{bits:[1,1,1], name:"건", hanja:"乾", nat:"하늘", sym:"☰"},
+  tae :{bits:[1,1,0], name:"태", hanja:"兌", nat:"못",   sym:"☱"},
+  ri  :{bits:[1,0,1], name:"리", hanja:"離", nat:"불",   sym:"☲"},
+  jin :{bits:[1,0,0], name:"진", hanja:"震", nat:"우레", sym:"☳"},
+  son :{bits:[0,1,1], name:"손", hanja:"巽", nat:"바람", sym:"☴"},
+  gam :{bits:[0,1,0], name:"감", hanja:"坎", nat:"물",   sym:"☵"},
+  gan :{bits:[0,0,1], name:"간", hanja:"艮", nat:"산",   sym:"☶"},
+  gon :{bits:[0,0,0], name:"곤", hanja:"坤", nat:"땅",   sym:"☷"}
+};
+const triByBits = {};
+for(const k in TRI){ triByBits[TRI[k].bits.join("")] = k; }
+
+/* ---- 64괘 (up=상괘, lo=하괘) ---- */
+const HEX = [
+ {n:1, k:"중천건", h:"重天乾", up:"geon", lo:"geon", gua:"하늘의 굳건한 기운. 크게 형통하고 바르게 함이 이롭다.", adv:"지금은 적극적으로 나아갈 때. 다만 교만을 경계하라."},
+ {n:2, k:"중지곤", h:"重地坤", up:"gon", lo:"gon", gua:"땅의 너그러운 덕. 유순함과 포용으로 만물을 기른다.", adv:"앞장서기보다 받아들이고 따를 때 일이 이루어진다."},
+ {n:3, k:"수뢰둔", h:"水雷屯", up:"gam", lo:"jin", gua:"초목이 처음 돋는 어려움. 시작은 험하나 바르게 지키면 통한다.", adv:"서두르지 말고 기반부터 다져라. 도움을 구하는 게 좋다."},
+ {n:4, k:"산수몽", h:"山水蒙", up:"gan", lo:"gam", gua:"어림과 몽매함. 가르치고 깨우치면 형통하다.", adv:"모르는 건 배우고 물어라. 조급함이 가장 큰 적이다."},
+ {n:5, k:"수천수", h:"水天需", up:"gam", lo:"geon", gua:"기다림. 때가 무르익기를 믿음으로 기다린다.", adv:"지금은 나설 때가 아니다. 준비하며 때를 기다려라."},
+ {n:6, k:"천수송", h:"天水訟", up:"geon", lo:"gam", gua:"다툼과 송사. 끝까지 다투면 흉하니 중도에 그침이 좋다.", adv:"이기려 들지 말고 물러서 화해하는 길을 찾아라."},
+ {n:7, k:"지수사", h:"地水師", up:"gon", lo:"gam", gua:"무리를 이끄는 군대. 바른 명분과 어른의 지도가 있어야 길하다.", adv:"질서와 원칙을 세워 사람들을 이끌어라."},
+ {n:8, k:"수지비", h:"水地比", up:"gam", lo:"gon", gua:"친밀하게 돕고 따름. 바르게 어울리면 길하다.", adv:"좋은 사람들과 가까이하고 진심으로 협력하라."},
+ {n:9, k:"풍천소축", h:"風天小畜", up:"son", lo:"geon", gua:"작게 쌓고 기름. 아직 큰 힘은 없으나 조금씩 모인다.", adv:"작은 것을 꾸준히 쌓아라. 큰 결실은 아직 이르다."},
+ {n:10, k:"천택리", h:"天澤履", up:"geon", lo:"tae", gua:"호랑이 꼬리를 밟듯 조심히 행함. 예로써 처신하면 형통하다.", adv:"위태로운 자리일수록 예의와 조심으로 처신하라."},
+ {n:11, k:"지천태", h:"地天泰", up:"gon", lo:"geon", gua:"하늘과 땅이 사귀어 통함. 크게 길하고 형통하다.", adv:"흐름이 트였다. 조화롭게 베풀면 더 좋아진다."},
+ {n:12, k:"천지비", h:"天地否", up:"geon", lo:"gon", gua:"하늘과 땅이 막혀 통하지 않음. 소인의 때이니 물러나 지킨다.", adv:"일이 막힐 때다. 무리하지 말고 때를 지켜 기다려라."},
+ {n:13, k:"천화동인", h:"天火同人", up:"geon", lo:"ri", gua:"사람들과 뜻을 함께함. 공명정대하면 형통하다.", adv:"사사로움을 버리고 뜻 맞는 이들과 함께하라."},
+ {n:14, k:"화천대유", h:"火天大有", up:"ri", lo:"geon", gua:"크게 가지고 누림. 겸손히 하면 크게 형통하다.", adv:"가진 것이 많을수록 겸손하고 나눠라."},
+ {n:15, k:"지산겸", h:"地山謙", up:"gon", lo:"gan", gua:"겸손. 높되 낮추니 끝내 길하다.", adv:"낮추고 겸손하면 사람과 복이 모인다."},
+ {n:16, k:"뇌지예", h:"雷地豫", up:"jin", lo:"gon", gua:"기쁨과 즐거움, 미리 대비함. 순리에 따르면 이롭다.", adv:"즐거움에 들뜨지 말고 미리 준비하라."},
+ {n:17, k:"택뢰수", h:"澤雷隨", up:"tae", lo:"jin", gua:"때에 따라 좇음. 바르게 따르면 크게 형통하다.", adv:"고집을 버리고 흐름과 사람을 유연하게 따르라."},
+ {n:18, k:"산풍고", h:"山風蠱", up:"gan", lo:"son", gua:"묵은 폐단을 바로잡음. 어지러움을 고치면 크게 형통하다.", adv:"곪은 문제를 미루지 말고 지금 바로잡아라."},
+ {n:19, k:"지택림", h:"地澤臨", up:"gon", lo:"tae", gua:"다가가 임함. 때가 성하니 크게 형통하나 끝을 경계하라.", adv:"기회가 다가온다. 적극적으로 임하되 교만을 조심하라."},
+ {n:20, k:"풍지관", h:"風地觀", up:"son", lo:"gon", gua:"살펴봄. 우러러 보고 깊이 관찰한다.", adv:"행동보다 먼저 넓게 살피고 성찰하라."},
+ {n:21, k:"화뢰서합", h:"火雷噬嗑", up:"ri", lo:"jin", gua:"씹어 합함. 장애를 깨물어 없애면 형통하다.", adv:"걸림돌은 분명하게 끊어내야 일이 통한다."},
+ {n:22, k:"산화비", h:"山火賁", up:"gan", lo:"ri", gua:"꾸미고 빛냄. 바탕 위에 문채를 더하니 작게 형통하다.", adv:"겉을 꾸미되 본질을 잊지 마라."},
+ {n:23, k:"산지박", h:"山地剝", up:"gan", lo:"gon", gua:"깎여 떨어짐. 소인이 성하니 나아감이 이롭지 않다.", adv:"무너지는 때다. 움직이지 말고 지켜라."},
+ {n:24, k:"지뢰복", h:"地雷復", up:"gon", lo:"jin", gua:"돌아옴. 양이 다시 돌아오니 형통하다.", adv:"바닥을 지났다. 처음 마음으로 다시 시작하라."},
+ {n:25, k:"천뢰무망", h:"天雷无妄", up:"geon", lo:"jin", gua:"거짓 없는 자연스러움. 바르면 형통하나 그릇되면 재앙이다.", adv:"꾸밈 없이 바르게 하라. 억지 욕심은 화를 부른다."},
+ {n:26, k:"산천대축", h:"山天大畜", up:"gan", lo:"geon", gua:"크게 쌓아 기름. 바르게 하면 이롭고 어진 이를 기른다.", adv:"크게 이루려면 힘과 덕을 충분히 축적하라."},
+ {n:27, k:"산뢰이", h:"山雷頤", up:"gan", lo:"jin", gua:"기름. 무엇을 어떻게 기르는지 바르게 하면 길하다.", adv:"몸과 말, 사람을 바르게 기르고 아껴라."},
+ {n:28, k:"택풍대과", h:"澤風大過", up:"tae", lo:"son", gua:"크게 지나침. 들보가 휘니 위태로우나 나아갈 바가 있다.", adv:"지나친 부담의 때. 과감하되 무너지지 않게 하라."},
+ {n:29, k:"중수감", h:"重水坎", up:"gam", lo:"gam", gua:"거듭된 험난. 믿음을 지키면 마음이 형통하다.", adv:"위험이 겹친 때. 진심과 성실로 한 걸음씩 벗어나라."},
+ {n:30, k:"중화리", h:"重火離", up:"ri", lo:"ri", gua:"거듭 밝음. 바름에 붙으면 형통하다.", adv:"밝게 빛나되 바른 것에 의지하라."},
+ {n:31, k:"택산함", h:"澤山咸", up:"tae", lo:"gan", gua:"느끼어 감응함. 서로 감응하니 형통하다.", adv:"마음을 열고 진실하게 교감하라. 좋은 인연의 때다."},
+ {n:32, k:"뇌풍항", h:"雷風恒", up:"jin", lo:"son", gua:"한결같음. 오래 지켜 변치 않으면 형통하다.", adv:"흔들리지 말고 꾸준함을 지켜라."},
+ {n:33, k:"천산돈", h:"天山遯", up:"geon", lo:"gan", gua:"물러나 숨음. 때맞춰 물러나면 형통하다.", adv:"맞설 때가 아니다. 지혜롭게 물러서라."},
+ {n:34, k:"뇌천대장", h:"雷天大壯", up:"jin", lo:"geon", gua:"크게 씩씩함. 힘이 성하나 바름을 지켜야 이롭다.", adv:"힘이 넘칠 때일수록 예와 바름을 지켜라."},
+ {n:35, k:"화지진", h:"火地晉", up:"ri", lo:"gon", gua:"나아가 떠오름. 밝음이 땅 위로 솟듯 전진한다.", adv:"앞으로 나아갈 때. 밝고 당당하게 전진하라."},
+ {n:36, k:"지화명이", h:"地火明夷", up:"gon", lo:"ri", gua:"밝음이 상함. 어둠의 때이니 빛을 감추고 바름을 지킨다.", adv:"재능을 드러내지 말고 안으로 지켜라."},
+ {n:37, k:"풍화가인", h:"風火家人", up:"son", lo:"ri", gua:"집안사람. 각자 자리를 지키면 집안이 바로 선다.", adv:"가까운 사람들과의 질서와 역할을 바로 하라."},
+ {n:38, k:"화택규", h:"火澤睽", up:"ri", lo:"tae", gua:"어긋남. 뜻이 갈리나 작은 일은 길하다.", adv:"서로 다름을 인정하라. 큰일보다 작은 합의부터."},
+ {n:39, k:"수산건", h:"水山蹇", up:"gam", lo:"gan", gua:"절뚝임, 험난함. 나아감이 어려우니 돌이켜 도움을 구한다.", adv:"막힐 땐 무리하지 말고 어진 이에게 도움을 구하라."},
+ {n:40, k:"뇌수해", h:"雷水解", up:"jin", lo:"gam", gua:"풀림. 험난함이 풀리니 가는 바가 있으면 길하다.", adv:"맺힌 것이 풀리는 때. 미룬 일을 서둘러 처리하라."},
+ {n:41, k:"산택손", h:"山澤損", up:"gan", lo:"tae", gua:"덜어냄. 아래를 덜어 위에 더하니 믿음이 있으면 길하다.", adv:"덜어내고 비우는 것이 오히려 이로운 때다."},
+ {n:42, k:"풍뢰익", h:"風雷益", up:"son", lo:"jin", gua:"더함. 위를 덜어 아래에 보태니 나아감이 이롭다.", adv:"베풀고 더하면 크게 이롭다. 선행의 때다."},
+ {n:43, k:"택천쾌", h:"澤天夬", up:"tae", lo:"geon", gua:"터놓아 결단함. 과감히 결단하되 위태로움을 알라.", adv:"미룬 결단을 내려라. 다만 강압은 삼가라."},
+ {n:44, k:"천풍구", h:"天風姤", up:"geon", lo:"son", gua:"우연히 만남. 음이 자라나니 지나친 만남을 경계한다.", adv:"뜻밖의 만남·유혹을 조심하고 거리를 지켜라."},
+ {n:45, k:"택지췌", h:"澤地萃", up:"tae", lo:"gon", gua:"모임. 사람과 뜻이 모이니 크게 형통하다.", adv:"흩어진 힘을 한데 모아라. 사람을 모으는 때다."},
+ {n:46, k:"지풍승", h:"地風升", up:"gon", lo:"son", gua:"올라감. 때맞춰 오르니 크게 형통하다.", adv:"차근차근 위로 나아가라. 꾸준함이 상승을 부른다."},
+ {n:47, k:"택수곤", h:"澤水困", up:"tae", lo:"gam", gua:"곤궁함. 어려움에 처하나 바름을 지키면 형통하다.", adv:"힘든 때일수록 말보다 묵묵한 바름으로 버텨라."},
+ {n:48, k:"수풍정", h:"水風井", up:"gam", lo:"son", gua:"우물. 자리를 옮기지 않고 두루 기른다.", adv:"자기 자리에서 꾸준히 베풀고 기본을 지켜라."},
+ {n:49, k:"택화혁", h:"澤火革", up:"tae", lo:"ri", gua:"바꿈, 혁신. 때가 이르면 믿음으로 고치니 크게 형통하다.", adv:"낡은 것을 바꿀 때. 명분과 때를 갖춰 혁신하라."},
+ {n:50, k:"화풍정", h:"火風鼎", up:"ri", lo:"son", gua:"솥. 새것을 길러 이룸, 크게 형통하다.", adv:"안정된 틀 위에서 새 가치를 길러내라."},
+ {n:51, k:"중뢰진", h:"重雷震", up:"jin", lo:"jin", gua:"거듭된 우레, 놀람. 두려움 속에서도 삼가면 형통하다.", adv:"충격의 때. 놀라되 침착함을 잃지 마라."},
+ {n:52, k:"중산간", h:"重山艮", up:"gan", lo:"gan", gua:"멈춤. 그쳐야 할 때 그치면 허물이 없다.", adv:"멈출 때 멈춰라. 고요히 머무는 것이 답이다."},
+ {n:53, k:"풍산점", h:"風山漸", up:"son", lo:"gan", gua:"점차 나아감. 순서를 밟아 나아가면 길하다.", adv:"서두르지 말고 단계를 밟아 천천히 나아가라."},
+ {n:54, k:"뇌택귀매", h:"雷澤歸妹", up:"jin", lo:"tae", gua:"누이를 시집보냄. 바르지 못하면 흉하니 끝을 삼간다.", adv:"조급한 결합·시작을 경계하라. 분수를 지켜라."},
+ {n:55, k:"뇌화풍", h:"雷火豊", up:"jin", lo:"ri", gua:"풍성함. 성대하니 형통하나 해가 기욺을 알라.", adv:"번성의 절정. 교만하지 말고 베풀며 대비하라."},
+ {n:56, k:"화산려", h:"火山旅", up:"ri", lo:"gan", gua:"나그네. 머무를 곳 없는 떠돎, 작게 형통하다.", adv:"낯선 상황에선 겸손하고 처신을 조심하라."},
+ {n:57, k:"중풍손", h:"重風巽", up:"son", lo:"son", gua:"공손히 따름, 스며듦. 작게 형통하니 나아갈 바가 있다.", adv:"부드럽게 파고들어라. 유연함이 힘이다."},
+ {n:58, k:"중택태", h:"重澤兌", up:"tae", lo:"tae", gua:"기뻐함. 바르게 기뻐하면 형통하다.", adv:"진심 어린 기쁨을 나눠라. 다만 아첨은 경계하라."},
+ {n:59, k:"풍수환", h:"風水渙", up:"son", lo:"gam", gua:"흩어짐. 막힌 것을 풀어 흩으니 형통하다.", adv:"뭉친 마음·갈등을 풀어 흩어라. 소통의 때다."},
+ {n:60, k:"수택절", h:"水澤節", up:"gam", lo:"tae", gua:"절제. 알맞게 마디를 지으면 형통하다.", adv:"지나치지 않게 절제하고 한도를 정하라."},
+ {n:61, k:"풍택중부", h:"風澤中孚", up:"son", lo:"tae", gua:"속마음의 믿음. 진실한 믿음이 있으면 길하다.", adv:"진심과 신뢰로 대하라. 정성이 통한다."},
+ {n:62, k:"뇌산소과", h:"雷山小過", up:"jin", lo:"gan", gua:"조금 지나침. 작은 일은 가하나 큰일은 삼간다.", adv:"큰 욕심은 접고 작은 일에 충실하라."},
+ {n:63, k:"수화기제", h:"水火既濟", up:"gam", lo:"ri", gua:"이미 이룸. 다 이루었으나 끝을 조심해야 한다.", adv:"완성 뒤의 방심을 경계하라. 마무리가 중요하다."},
+ {n:64, k:"화수미제", h:"火水未濟", up:"ri", lo:"gam", gua:"아직 이루지 못함. 끝이 가까우니 삼가면 형통하다.", adv:"아직 미완성. 신중히 마지막 고비를 넘겨라."}
+];
+const hexByKey = {};
+for(const x of HEX){ hexByKey[x.up + "-" + x.lo] = x; }
+
+/* ---- 뽑기: 동전 세 닢 × 여섯 번 (척전법) ---- */
+function tossLineType(){
+  // 동전 앞=3, 뒤=2. 세 닢의 합: 6 노음 / 7 소양 / 8 소음 / 9 노양
+  let sum = 0;
+  for(let c=0;c<3;c++){ sum += (Math.random()<0.5 ? 3 : 2); }
+  return sum;
+}
+function drawHex(){
+  const lines = [], chg = [];       // index 0 = 맨 아래(초효)
+  for(let i=0;i<6;i++){
+    const t = tossLineType();
+    lines.push( (t===7 || t===9) ? 1 : 0 );   // 양: 7,9 / 음: 6,8
+    chg.push( (t===6 || t===9) );             // 변효: 노음6, 노양9
+  }
+  const loKey = triByBits[ lines.slice(0,3).join("") ];
+  const upKey = triByBits[ lines.slice(3,6).join("") ];
+  const hex = hexByKey[ upKey + "-" + loKey ];
+
+  const hasChg = chg.some(Boolean);
+  let toHex = null, toLines = null;
+  if(hasChg){
+    toLines = lines.map((v,i)=> chg[i] ? (v===1 ? 0 : 1) : v);  // 변효를 뒤집어 지괘
+    const tLoKey = triByBits[ toLines.slice(0,3).join("") ];
+    const tUpKey = triByBits[ toLines.slice(3,6).join("") ];
+    toHex = hexByKey[ tUpKey + "-" + tLoKey ];
+  }
+  return { hex, lines, chg, upKey, loKey, hasChg, toHex, toLines };
+}
+function buildGua(lines, chg){
+  let html = "";
+  for(let i=5;i>=0;i--){                      // 위(6효)부터 아래(초효)로
+    const yang = lines[i] === 1;
+    const changing = chg && chg[i];
+    const bars = yang
+      ? '<span class="bar"></span>'
+      : '<span class="bar"></span><span class="bar"></span>';
+    const mark = changing
+      ? '<span class="chgmark">' + (yang ? '○' : '×') + '</span>'
+      : '';
+    html += '<div class="linerow' + (changing ? ' chg' : '') + '">'
+          +   '<div class="yao ' + (yang ? 'yang' : 'yin') + '">' + bars + '</div>'
+          +   mark
+          + '</div>';
+  }
+  return html;
+}
+
+/* ---- 렌더 ---- */
+const stage = document.getElementById('stage');
+const actions = document.getElementById('actions');
+let current = null;
+
+function render(d){
+  const {hex, lines, chg, upKey, loKey, hasChg, toHex, toLines} = d;
+  const up = TRI[upKey], lo = TRI[loKey];
+
+  const legend = hasChg
+    ? '<div class="marklegend">○ 노양(양→음) · × 노음(음→양)</div>'
+    : '';
+
+  const toBlock = hasChg
+    ? `
+      <div class="toGua">
+        <div class="tolabel">▼ 변하여 — 지괘</div>
+        <div class="hexno">제 ${toHex.n} 괘</div>
+        <div class="hexname">${toHex.k}</div>
+        <div class="hexhanja">${toHex.h}</div>
+        <div class="gua">${buildGua(toLines, null)}</div>
+        <div class="reading">
+          <h3>괘사</h3>
+          <p class="gua-txt">${toHex.gua}</p>
+          <h3>오늘의 조언</h3>
+          <p class="adv-txt">${toHex.adv}</p>
+        </div>
+      </div>`
+    : '<div class="nochg">변효 없음 — 본괘 그대로 봅니다</div>';
+
+  stage.innerHTML = `
+    <div class="card" id="card">
+      <div class="hexno">본괘 · 제 ${hex.n} 괘</div>
+      <h2 class="hexname">${hex.k}</h2>
+      <div class="hexhanja">${hex.h}</div>
+
+      <div class="gua">${buildGua(lines, chg)}</div>
+      ${legend}
+
+      <div class="trigrams">
+        <div class="tri">
+          <div class="role">상괘</div>
+          <div class="sym">${up.sym}</div>
+          <div class="tname">${up.name}(${up.hanja})</div>
+          <div class="tnat">${up.nat}</div>
+        </div>
+        <div class="tri">
+          <div class="role">하괘</div>
+          <div class="sym">${lo.sym}</div>
+          <div class="tname">${lo.name}(${lo.hanja})</div>
+          <div class="tnat">${lo.nat}</div>
+        </div>
+      </div>
+
+      <div class="reading">
+        <h3>괘사</h3>
+        <p class="gua-txt">${hex.gua}</p>
+        <h3>오늘의 조언</h3>
+        <p class="adv-txt">${hex.adv}</p>
+      </div>
+
+      ${toBlock}
+    </div>`;
+  actions.innerHTML =
+    '<div class="btnrow">' +
+      '<button class="again-btn" id="copyBtn">결과 복사</button>' +
+      '<button class="again-btn" id="againBtn">다시 뽑기</button>' +
+    '</div>';
+  requestAnimationFrame(()=> document.getElementById('card').classList.add('show'));
+  document.getElementById('againBtn').addEventListener('click', onDraw);
+  document.getElementById('copyBtn').addEventListener('click', copyResult);
+}
+
+/* ---- 결과만 텍스트로 복사 (해석 제외) ---- */
+function yaoName(i){ return i===0 ? "초효" : (i===5 ? "상효" : (i+1)+"효"); }
+function resultText(d){
+  let s = "[오늘의 괘]\n";
+  s += "본괘: " + d.hex.n + " " + d.hex.k + " (" + d.hex.h + ")\n";
+  if(d.hasChg){
+    const marks = [];
+    for(let i=0;i<6;i++){ if(d.chg[i]) marks.push(yaoName(i)); }
+    s += "변효: " + marks.join(", ") + "\n";
+    s += "지괘: " + d.toHex.n + " " + d.toHex.k + " (" + d.toHex.h + ")";
+  } else {
+    s += "변효: 없음";
+  }
+  return s;
+}
+function flash(btn, msg){
+  const prev = btn.textContent;
+  btn.textContent = msg; btn.disabled = true;
+  setTimeout(()=>{ btn.textContent = prev; btn.disabled = false; }, 1400);
+}
+function fallbackCopy(text, btn){
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.top='0'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    flash(btn, "복사됨");
+  }catch(e){ flash(btn, "복사 실패"); }
+}
+function copyResult(){
+  if(!current) return;
+  const text = resultText(current);
+  const btn = document.getElementById('copyBtn');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>flash(btn,"복사됨")).catch(()=>fallbackCopy(text, btn));
+  } else {
+    fallbackCopy(text, btn);
+  }
+}
+
+function onDraw(){
+  current = drawHex();
+  render(current);
+}
+document.getElementById('drawBtn').addEventListener('click', onDraw);
+</script>
+</body>
+</html>
